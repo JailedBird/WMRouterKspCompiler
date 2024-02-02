@@ -19,7 +19,6 @@ import com.alibaba.android.arouter.facade.model.RouteMeta
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.serializer.SerializerFeature
 import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -48,7 +47,7 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import java.util.TreeSet
-import kotlin.reflect.KClass
+import javax.lang.model.element.Modifier
 
 @KotlinPoetKspPreview
 class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
@@ -93,15 +92,17 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
 
         private val FRAGMENT_ANDROID_X_CLASS = "androidx.fragment.app.Fragment"
 
-        @OptIn(KspExperimental::class)
         private fun parse(elements: List<KSClassDeclaration>) {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
-            for (i in elements) {
-                logger.info(">>> Found routes, ${i.qualifiedName?.asString()}")
-            }
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
             for (element in elements) {
+                // Judge is Abstract class
+                val isAbstract: Boolean =
+                    element.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT)
+                if (isAbstract) {
+                    continue
+                }
                 val type: Int =
                     element.isSubclassOf(
                         listOf(
@@ -159,9 +160,9 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 // https://github.com/google/ksp/pull/1330
                 // java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
 
-                val paths = page.path
-
+                logger.info(">>> Found routes, ${element.qualifiedName?.asString()}")
                 for (path in page.path) {
+                    logger.info(">>> \tpath is $path")
                     codeBlock.addStatement(
                         "handler.register(%S, %L %L)",
                         path,
@@ -267,7 +268,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
             if (isActivity) {
                 codeBlock.add("%S", element.qualifiedName?.asString())
             } else {
-                codeBlock.add("%T()", element)
+                codeBlock.add("%T()", element.toClassName())
             }
             return codeBlock.build()
         }
