@@ -6,7 +6,6 @@ import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
 import cn.jailedbird.arouter.ksp.compiler.utils.findModuleHashName
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
 import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
-import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -16,7 +15,6 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
 import com.sankuai.waimai.router.annotation.RouterRegex
 import com.sankuai.waimai.router.interfaces.Const
 import com.squareup.kotlinpoet.ClassName
@@ -27,7 +25,6 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 @KotlinPoetKspPreview
@@ -71,7 +68,6 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
             return emptyList()
         }
 
-        private val FRAGMENT_ANDROID_X_CLASS = "androidx.fragment.app.Fragment"
 
         @OptIn(KspExperimental::class)
         private fun parse(elements: List<KSClassDeclaration>) {
@@ -90,86 +86,54 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
                         listOf(
                             Const.ACTIVITY_CLASS,
                             Const.URI_HANDLER_CLASS,
-                            Const.FRAGMENT_CLASS,
-                            Const.FRAGMENT_V4_CLASS,
-                            FRAGMENT_ANDROID_X_CLASS
                         )
                     )
                 val isActivity: Boolean = type == 0
                 val isHandler: Boolean = type == 1
-                val isFragment: Boolean = type == 2
-                val isFragmentV4: Boolean = type == 3 || type == 4
 
-                if (!isActivity && !isHandler && !isFragment && !isFragmentV4) {
+
+                if (!isActivity && !isHandler) {
                     continue
                 }
-                val page: RouterRegex =
+                val regex: RouterRegex =
                     element.findAnnotationWithType<RouterRegex>() ?: continue
 
-                /*public class PageAnnotationInit_b6d2ec00f1c180a333609129781e87f8 implements IPageAnnotationInit {
-                      public void init(PageAnnotationHandler handler) {
-                        handler.register("/fragment/demo_fragment_1", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo1Fragment"), new DemoFragmentInterceptor());
-                        handler.register("/fragment/demo_fragment_2", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo2Fragment"), new DemoFragmentInterceptor());
-                        handler.register("/test/handler", new TestPageAnnotation.TestHandler());
-                        handler.register("/test/interceptor", new TestPageAnnotation.TestInterceptorHandler(), new UriParamInterceptor());
-                        handler.register("/test/interceptors", new TestPageAnnotation.TestInterceptorsHandler(), new UriParamInterceptor(), new ChainedInterceptor());
-                      }
-                    }
-                */
                 element.containingFile?.let {
                     dependencies.add(it)
                 }
-                val handler = if (isFragment || isFragmentV4) {
-                    buildFragmentHandler(element)
-                } else {
-                    buildHandler(isActivity, element)
-                }
+                val handler = Helper.buildHandler(isActivity, element)
 
-                val interceptors = buildInterceptors(page)
-
-
-                /*
-                * String[] pathList = page.path();
-                    for (String path : pathList) {
-                        builder.addStatement("handler.register($S, $L$L)",
-                                path,
-                                handler,
-                                interceptors);
-                    }*/
-                // 此处类型转换存在错误
-                // https://github.com/google/ksp/issues/1329
-                // If java annotation value is array type, it will make getAnnotationsByType throw class cast issue, it seems that in java we can declare a single value for annotation value whose type is array, like this one
-                // https://github.com/google/ksp/pull/1330
-                // java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
+                val interceptors = Helper.buildInterceptors(regex)
 
                 logger.info(">>> Found routes, ${element.qualifiedName?.asString()}")
-                for (path in page.path) {
-                    logger.info(">>> \tpath is $path")
-                    codeBlock.addStatement(
-                        "handler.register(%S, %L %L)",
-                        path,
-                        handler,
-                        interceptors
-                    )
-                }
+
+                // regex, activityClassName/new Handler(), exported, priority, new Interceptors()
+                codeBlock.addStatement(
+                    "handler.register(%S, %L, %L, %L%L)",
+                    regex.regex,
+                    handler,
+                    regex.exported,
+                    regex.priority,
+                    interceptors
+                )
             }
 
 
-            val genClassName = "PageAnnotationInit" + Const.SPLITTER + moduleHashName
+            val genClassName = "RegexAnnotationInit" + Const.SPLITTER + moduleHashName
 
             Helper.buildHandlerInitClass(
                 codeBlock.build(),
                 genClassName,
-                Const.PAGE_ANNOTATION_HANDLER_CLASS,
-                Const.PAGE_ANNOTATION_INIT_CLASS,
+                Const.REGEX_ANNOTATION_HANDLER_CLASS,
+                Const.REGEX_ANNOTATION_INIT_CLASS,
                 codeGenerator,
                 dependencies
             )
 
             val fullImplName = Const.GEN_PKG + Const.DOT + genClassName
             val className =
-                "ServiceInit" + Const.SPLITTER + "PageAnnotation" + Const.SPLITTER + moduleHashName
-            val interfaceName = Const.PAGE_ANNOTATION_INIT_CLASS
+                "ServiceInit" + Const.SPLITTER + "RegexAnnotationInit" + Const.SPLITTER + moduleHashName
+            val interfaceName = Const.REGEX_ANNOTATION_INIT_CLASS
             ServiceInitClassBuilder(className)
                 .putDirectly(interfaceName, fullImplName, fullImplName, false)
                 .build(codeGenerator, dependencies)
@@ -205,51 +169,6 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
                     .build()
 
             file.writeTo(codeGenerator, true, dependencies)
-        }
-
-
-        private fun buildFragmentHandler(element: KSClassDeclaration): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            codeBlock.add(
-                "%T(%S)",
-                Const.FRAGMENT_HANDLER_CLASS.quantifyNameToClassName(),
-                element.qualifiedName?.asString()
-            )
-            return codeBlock.build()
-        }
-
-        private fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            if (isActivity) {
-                codeBlock.add("%S", element.qualifiedName?.asString())
-            } else {
-                codeBlock.add("%T()", element.toClassName())
-            }
-            return codeBlock.build()
-        }
-
-        @OptIn(KspExperimental::class)
-        private fun buildInterceptors(page: RouterRegex): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
-                page.interceptors.asList()
-            } catch (e: KSTypesNotPresentException) {
-                e.ksTypes
-            }
-            for (interceptor in interceptors) {
-                if (interceptor is KSType) {
-                    val declaration = interceptor.declaration
-                    if (declaration is KSClassDeclaration) {
-                        if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
-                            declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
-                        ) {
-                            logger.info("fuck ${declaration.toClassName()}")
-                            codeBlock.add(", %T()", declaration.toClassName())
-                        }
-                    }
-                }
-            }
-            return codeBlock.build()
         }
 
 
