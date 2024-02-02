@@ -17,7 +17,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
-import com.sankuai.waimai.router.annotation.RouterPage
+import com.sankuai.waimai.router.annotation.RouterRegex
 import com.sankuai.waimai.router.interfaces.Const
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -31,7 +31,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 @KotlinPoetKspPreview
-class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
+class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return RoutePageSymbolProcessor(
@@ -46,7 +46,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
     ) : SymbolProcessor {
         @Suppress("SpellCheckingInspection")
         companion object {
-            private val ROUTE_CLASS_NAME = RouterPage::class.qualifiedName!!
+            private val ROUTE_CLASS_NAME = RouterRegex::class.qualifiedName!!
             private val IROUTE_GROUP_CLASSNAME = Consts.IROUTE_GROUP.quantifyNameToClassName()
             private val IPROVIDER_GROUP_CLASSNAME = Consts.IPROVIDER_GROUP.quantifyNameToClassName()
         }
@@ -103,8 +103,8 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 if (!isActivity && !isHandler && !isFragment && !isFragmentV4) {
                     continue
                 }
-                val page: RouterPage =
-                    element.findAnnotationWithType<RouterPage>() ?: continue
+                val page: RouterRegex =
+                    element.findAnnotationWithType<RouterRegex>() ?: continue
 
                 /*public class PageAnnotationInit_b6d2ec00f1c180a333609129781e87f8 implements IPageAnnotationInit {
                       public void init(PageAnnotationHandler handler) {
@@ -229,7 +229,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
         }
 
         @OptIn(KspExperimental::class)
-        private fun buildInterceptors(page: RouterPage): CodeBlock {
+        private fun buildInterceptors(page: RouterRegex): CodeBlock {
             val codeBlock = CodeBlock.builder()
             val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
                 page.interceptors.asList()

@@ -17,7 +17,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
-import com.sankuai.waimai.router.annotation.RouterPage
+import com.sankuai.waimai.router.annotation.RouterUri
 import com.sankuai.waimai.router.interfaces.Const
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -31,22 +31,22 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 @KotlinPoetKspPreview
-class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
+class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return RoutePageSymbolProcessor(
+        return RouterUriSymbolProcessor(
             KSPLoggerWrapper(environment.logger), environment.codeGenerator, environment.options
         )
     }
 
-    class RoutePageSymbolProcessor(
+    class RouterUriSymbolProcessor(
         private val logger: KSPLoggerWrapper,
         private val codeGenerator: CodeGenerator,
         options: Map<String, String>
     ) : SymbolProcessor {
         @Suppress("SpellCheckingInspection")
         companion object {
-            private val ROUTE_CLASS_NAME = RouterPage::class.qualifiedName!!
+            private val ROUTE_CLASS_NAME = RouterUri::class.qualifiedName!!
             private val IROUTE_GROUP_CLASSNAME = Consts.IROUTE_GROUP.quantifyNameToClassName()
             private val IPROVIDER_GROUP_CLASSNAME = Consts.IPROVIDER_GROUP.quantifyNameToClassName()
         }
@@ -71,7 +71,6 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
             return emptyList()
         }
 
-        private val FRAGMENT_ANDROID_X_CLASS = "androidx.fragment.app.Fragment"
 
         @OptIn(KspExperimental::class)
         private fun parse(elements: List<KSClassDeclaration>) {
@@ -90,42 +89,23 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                         listOf(
                             Const.ACTIVITY_CLASS,
                             Const.URI_HANDLER_CLASS,
-                            Const.FRAGMENT_CLASS,
-                            Const.FRAGMENT_V4_CLASS,
-                            FRAGMENT_ANDROID_X_CLASS
                         )
                     )
                 val isActivity: Boolean = type == 0
                 val isHandler: Boolean = type == 1
-                val isFragment: Boolean = type == 2
-                val isFragmentV4: Boolean = type == 3 || type == 4
 
-                if (!isActivity && !isHandler && !isFragment && !isFragmentV4) {
+                if (!isActivity && !isHandler) {
                     continue
                 }
-                val page: RouterPage =
-                    element.findAnnotationWithType<RouterPage>() ?: continue
+                val uri: RouterUri =
+                    element.findAnnotationWithType<RouterUri>() ?: continue
 
-                /*public class PageAnnotationInit_b6d2ec00f1c180a333609129781e87f8 implements IPageAnnotationInit {
-                      public void init(PageAnnotationHandler handler) {
-                        handler.register("/fragment/demo_fragment_1", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo1Fragment"), new DemoFragmentInterceptor());
-                        handler.register("/fragment/demo_fragment_2", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo2Fragment"), new DemoFragmentInterceptor());
-                        handler.register("/test/handler", new TestPageAnnotation.TestHandler());
-                        handler.register("/test/interceptor", new TestPageAnnotation.TestInterceptorHandler(), new UriParamInterceptor());
-                        handler.register("/test/interceptors", new TestPageAnnotation.TestInterceptorsHandler(), new UriParamInterceptor(), new ChainedInterceptor());
-                      }
-                    }
-                */
                 element.containingFile?.let {
                     dependencies.add(it)
                 }
-                val handler = if (isFragment || isFragmentV4) {
-                    buildFragmentHandler(element)
-                } else {
-                    buildHandler(isActivity, element)
-                }
+                val handler = buildHandler(isActivity, element)
 
-                val interceptors = buildInterceptors(page)
+                val interceptors = buildInterceptors(uri)
 
 
                 /*
@@ -143,33 +123,36 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 // java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
 
                 logger.info(">>> Found routes, ${element.qualifiedName?.asString()}")
-                for (path in page.path) {
+                for (path in uri.path) {
                     logger.info(">>> \tpath is $path")
                     codeBlock.addStatement(
-                        "handler.register(%S, %L %L)",
+                        "handler.register(%S, %S, %S, %L, %L%L)",
+                        uri.scheme,
+                        uri.host,
                         path,
                         handler,
+                        uri.exported,
                         interceptors
                     )
                 }
             }
 
 
-            val genClassName = "PageAnnotationInit" + Const.SPLITTER + moduleHashName
-
+            val genClassName = "UriAnnotationInit" + Const.SPLITTER + moduleHashName
+            // val handlerClassName = Const.PAGE_ANNOTATION_HANDLER_CLASS
+            val interfaceName = Const.PAGE_ANNOTATION_INIT_CLASS
             Helper.buildHandlerInitClass(
                 codeBlock.build(),
                 genClassName,
-                Const.PAGE_ANNOTATION_HANDLER_CLASS,
-                Const.PAGE_ANNOTATION_INIT_CLASS,
+                Const.URI_ANNOTATION_HANDLER_CLASS,
+                Const.URI_ANNOTATION_INIT_CLASS,
                 codeGenerator,
                 dependencies
             )
 
             val fullImplName = Const.GEN_PKG + Const.DOT + genClassName
             val className =
-                "ServiceInit" + Const.SPLITTER + "PageAnnotation" + Const.SPLITTER + moduleHashName
-            val interfaceName = Const.PAGE_ANNOTATION_INIT_CLASS
+                "ServiceInit" + Const.SPLITTER + "UriAnnotation" + Const.SPLITTER + moduleHashName
             ServiceInitClassBuilder(className)
                 .putDirectly(interfaceName, fullImplName, fullImplName, false)
                 .build(codeGenerator, dependencies)
@@ -181,30 +164,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
             genClassName: String,
             dependencies: Iterable<KSFile>
         ) {
-            val handlerParameterSpec = ParameterSpec.builder(
-                "handler",
-                Const.PAGE_ANNOTATION_HANDLER_CLASS.quantifyNameToClassName()
-            ).build()
 
-            val initMethod: FunSpec =
-                FunSpec.builder(Const.INIT_METHOD)
-                    .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                    .addParameter(handlerParameterSpec)
-                    .addCode(methodCodeBlock)
-                    .build()
-
-            val file =
-                FileSpec.builder(Const.GEN_PKG, genClassName)
-                    .addType(
-                        TypeSpec.classBuilder(ClassName(Const.GEN_PKG, genClassName))
-                            .addKdoc(Consts.WARNING_TIPS)
-                            .addSuperinterface(Const.PAGE_ANNOTATION_INIT_CLASS.quantifyNameToClassName())
-                            .addFunction(initMethod)
-                            .build()
-                    )
-                    .build()
-
-            file.writeTo(codeGenerator, true, dependencies)
         }
 
 
@@ -229,7 +189,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
         }
 
         @OptIn(KspExperimental::class)
-        private fun buildInterceptors(page: RouterPage): CodeBlock {
+        private fun buildInterceptors(page: RouterUri): CodeBlock {
             val codeBlock = CodeBlock.builder()
             val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
                 page.interceptors.asList()
