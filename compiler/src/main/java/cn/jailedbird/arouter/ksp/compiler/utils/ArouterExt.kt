@@ -49,6 +49,18 @@ internal fun Map<String, String>.findModuleName(logger: KSPLogger): String {
     }
 }
 
+internal fun Map<String, String>.findModuleHashName(logger: KSPLogger): String {
+    val name = this[Consts.KEY_MODULE_HASH_NAME]
+    return if (!name.isNullOrEmpty()) {
+        @Suppress("RegExpSimplifiable", "KotlinConstantConditions")
+        name.replace("[^0-9a-zA-Z_]+".toRegex(), "")
+    } else {
+        logger.error(Consts.NO_MODULE_NAME_TIPS_KSP)
+        throw RuntimeException("ARouter::Compiler >>> No module name, for more information, look at gradle log.")
+    }
+}
+
+
 private val ROUTE_TYPE_LIST = listOf(
     Consts.ACTIVITY,// 0
     Consts.ACTIVITY_ANDROIDX, // 1

@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.viewModels
 import com.sankuai.waimai.router.Router
+import com.sankuai.waimai.router.annotation.RouterPage
 import com.sankuai.waimai.router.annotation.RouterUri
 import com.sankuai.waimai.router.demo.kotlin.databinding.KotlinActivityDemoBinding
 import com.sankuai.waimai.router.demo.lib2.BaseActivity
 import com.sankuai.waimai.router.demo.lib2.DemoConstant
 
 @RouterUri(path = [DemoConstant.KOTLIN])
+@RouterPage(path = arrayOf("/test/handler11"))
 class KotlinActivity : BaseActivity() {
 
     private val testModel: TestViewModel by viewModels()

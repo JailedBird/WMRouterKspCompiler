@@ -3,7 +3,14 @@ package cn.jailedbird.arouter.ksp.compiler
 import cn.jailedbird.arouter.ksp.compiler.entity.RouteDoc
 import cn.jailedbird.arouter.ksp.compiler.entity.RouteMetaKsp
 import cn.jailedbird.arouter.ksp.compiler.entity.kspRawType
-import cn.jailedbird.arouter.ksp.compiler.utils.*
+import cn.jailedbird.arouter.ksp.compiler.utils.Consts
+import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
+import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
+import cn.jailedbird.arouter.ksp.compiler.utils.findModuleHashName
+import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
+import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
+import cn.jailedbird.arouter.ksp.compiler.utils.routeType
+import cn.jailedbird.arouter.ksp.compiler.utils.typeExchange
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.facade.enums.RouteType
@@ -11,39 +18,60 @@ import com.alibaba.android.arouter.facade.enums.TypeKind
 import com.alibaba.android.arouter.facade.model.RouteMeta
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.serializer.SerializerFeature
-import com.google.devtools.ksp.processing.*
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.squareup.kotlinpoet.*
+import com.sankuai.waimai.router.annotation.RouterPage
+import com.sankuai.waimai.router.interfaces.Const
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.MUTABLE_MAP
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.STRING
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
-import java.util.*
+import java.util.TreeSet
+import kotlin.reflect.KClass
 
 @KotlinPoetKspPreview
-class RouteSymbolProcessorProvider : SymbolProcessorProvider {
+class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return RouteSymbolProcessor(
+        return RoutePageSymbolProcessor(
             KSPLoggerWrapper(environment.logger), environment.codeGenerator, environment.options
         )
     }
 
-    class RouteSymbolProcessor(
+    class RoutePageSymbolProcessor(
         private val logger: KSPLoggerWrapper,
         private val codeGenerator: CodeGenerator,
         options: Map<String, String>
     ) : SymbolProcessor {
         @Suppress("SpellCheckingInspection")
         companion object {
-            private val ROUTE_CLASS_NAME = Route::class.qualifiedName!!
+            private val ROUTE_CLASS_NAME = RouterPage::class.qualifiedName!!
             private val IROUTE_GROUP_CLASSNAME = Consts.IROUTE_GROUP.quantifyNameToClassName()
             private val IPROVIDER_GROUP_CLASSNAME = Consts.IPROVIDER_GROUP.quantifyNameToClassName()
         }
 
-        private val moduleName = options.findModuleName(logger)
+        private val moduleHashName = options.findModuleHashName(logger)
         private val generateDoc = Consts.VALUE_ENABLE == options[Consts.KEY_GENERATE_DOC_NAME]
 
         override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -52,9 +80,9 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
             val elements = symbol.filterIsInstance<KSClassDeclaration>().toList()
 
             if (elements.isNotEmpty()) {
-                logger.info(">>> RouteSymbolProcessor init. <<<")
+                logger.info(">>> RoutePageSymbolProcessor init. <<<")
                 try {
-                    parseRoute(elements)
+                    parse(elements)
                 } catch (e: Exception) {
                     logger.exception(e)
                 }
@@ -63,21 +91,111 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
             return emptyList()
         }
 
-        private fun parseRoute(elements: List<KSClassDeclaration>) {
+        private val FRAGMENT_ANDROID_X_CLASS = "androidx.fragment.app.Fragment"
+
+        @OptIn(KspExperimental::class)
+        private fun parse(elements: List<KSClassDeclaration>) {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
-
-            val groupsMap = HashMap<String, TreeSet<RouteMeta>>()
-            val providersMap = mutableMapOf<String, RouteMeta>()
-            val docSource = mutableMapOf<String, List<RouteDoc>>()
-
             for (element in elements) {
-                categories(extractRouteMeta(element), groupsMap)
+                val type: Int =
+                    element.isSubclassOf(
+                        listOf(
+                            Const.ACTIVITY_CLASS,
+                            Const.URI_HANDLER_CLASS,
+                            Const.FRAGMENT_CLASS,
+                            Const.FRAGMENT_V4_CLASS,
+                            FRAGMENT_ANDROID_X_CLASS
+                        )
+                    )
+                val isActivity: Boolean = type == 0
+                val isHandler: Boolean = type == 1
+                val isFragment: Boolean = type == 2
+                val isFragmentV4: Boolean = type == 3 || type == 4
+
+                if (!isActivity && !isHandler && !isFragment && !isFragmentV4) {
+                    continue
+                }
+
+                val anno: RouterPage =
+                    element.getAnnotationsByType(RouterPage::class).firstOrNull() ?: continue
+
+                /*public class PageAnnotationInit_b6d2ec00f1c180a333609129781e87f8 implements IPageAnnotationInit {
+                      public void init(PageAnnotationHandler handler) {
+                        handler.register("/fragment/demo_fragment_1", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo1Fragment"), new DemoFragmentInterceptor());
+                        handler.register("/fragment/demo_fragment_2", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo2Fragment"), new DemoFragmentInterceptor());
+                        handler.register("/test/handler", new TestPageAnnotation.TestHandler());
+                        handler.register("/test/interceptor", new TestPageAnnotation.TestInterceptorHandler(), new UriParamInterceptor());
+                        handler.register("/test/interceptors", new TestPageAnnotation.TestInterceptorsHandler(), new UriParamInterceptor(), new ChainedInterceptor());
+                      }
+                    }
+                */
+                val handler = if (isFragment || isFragmentV4) {
+                    buildFragmentHandler(element)
+                } else {
+                    buildHandler(isActivity, element)
+                }
+
+                val interceptors = buildInterceptors(anno.interceptors.toList())
+                val p = anno.interceptors.toList()
+
+
             }
 
-            generateGroupFiles(groupsMap, providersMap, docSource)
-            generateProviderFile(providersMap)
-            generateRootFile(groupsMap, docSource)
         }
+
+        /**
+         * 创建Handler。格式： <code>new FragmentTransactionHandler("FragmentName")</code>
+         */
+//        public CodeBlock buildFragmentHandler( Symbol.ClassSymbol cls) {
+//            CodeBlock.Builder b = CodeBlock.builder();
+//            b.add("new $T($S)", className(Const.FRAGMENT_HANDLER_CLASS), cls.className());
+//            return b.build();
+//        }
+//        handler.register("/fragment/demo_fragment_1", new FragmentTransactionHandler("com.sankuai.waimai.router.demo.fragment2fragment.Demo1Fragment"), new DemoFragmentInterceptor());
+
+        private fun buildFragmentHandler(element: KSClassDeclaration): CodeBlock {
+            val codeBlock = CodeBlock.builder()
+            codeBlock.add(
+                "\$T(\$S)",
+                Const.FRAGMENT_HANDLER_CLASS.quantifyNameToClassName(),
+                element.qualifiedName?.asString()
+            )
+            return codeBlock.build()
+        }
+
+        private fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
+            val codeBlock = CodeBlock.builder()
+            if (isActivity) {
+                codeBlock.add("\$S", element.qualifiedName?.asString())
+            } else {
+                codeBlock.add("new \$T()", element)
+            }
+            return codeBlock.build()
+        }
+
+        private fun buildInterceptors(list: List<KClass<*>>?): CodeBlock {
+            val codeBlock = CodeBlock.builder()
+            if (!list.isNullOrEmpty()) {
+            
+            }
+            /*public CodeBlock buildInterceptors(List<? extends TypeMirror> interceptors) {
+                    CodeBlock.Builder b = CodeBlock.builder();
+                    if (interceptors != null && interceptors.size() > 0) {
+                        for (TypeMirror type : interceptors) {
+                            if (type instanceof Type.ClassType) {
+                                Symbol.TypeSymbol e = ((Type.ClassType) type).asElement();
+                                if (e instanceof Symbol.ClassSymbol && isInterceptor(e)) {
+                                    b.add(", new $T()", e);
+                                }
+                            }
+                        }
+                    }
+                    return b.build();
+                }*/
+
+            return codeBlock.build()
+        }
+
 
         private fun categories(
             routeMeta: RouteMeta, groupsMap: HashMap<String, TreeSet<RouteMeta>>
@@ -229,7 +347,7 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
                 }
             }
 
-            val providerClassName = Consts.NAME_OF_PROVIDER + Consts.SEPARATOR + moduleName
+            val providerClassName = Consts.NAME_OF_PROVIDER + Consts.SEPARATOR + moduleHashName
             val file = FileSpec.builder(Consts.PACKAGE_OF_GENERATE_FILE, providerClassName).addType(
                 TypeSpec.classBuilder(
                     ClassName(
@@ -288,7 +406,7 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
                 }
             }
 
-            val rootClassName = Consts.NAME_OF_ROOT + Consts.SEPARATOR + moduleName
+            val rootClassName = Consts.NAME_OF_ROOT + Consts.SEPARATOR + moduleHashName
 
             val file = FileSpec.builder(Consts.PACKAGE_OF_GENERATE_FILE, rootClassName).addType(
                 TypeSpec.classBuilder(
@@ -313,13 +431,13 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
                 val file = codeGenerator.createNewFile(
                     dependencies,
                     Consts.PACKAGE_OF_GENERATE_DOCS,
-                    "arouter-map-of-$moduleName",
+                    "arouter-map-of-$moduleHashName",
                     "json"
                 )
                 file.use {
                     it.write(doc.toByteArray())
                 }
-                logger.info(">>> Generated doc, name is arouter-map-of-$moduleName <<<")
+                logger.info(">>> Generated doc, name is arouter-map-of-$moduleHashName <<<")
             }
         }
 
@@ -361,14 +479,17 @@ class RouteSymbolProcessorProvider : SymbolProcessorProvider {
                         it.injectConfig = injectConfig
                     }
                 }
+
                 RouteType.SERVICE -> {
                     logger.info(">>> Found service route: $qualifiedName <<<")
                     RouteMetaKsp.build(route, element, RouteType.SERVICE, null)
                 }
+
                 RouteType.PROVIDER -> {
                     logger.info(">>> Found provider route: $qualifiedName <<<")
                     RouteMetaKsp.build(route, element, RouteType.PROVIDER, null)
                 }
+
                 else -> {
                     throw RuntimeException("The @Route is marked on unsupported class, look at [${qualifiedName}].")
                 }

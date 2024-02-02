@@ -1,3 +1,1 @@
-cn.jailedbird.arouter.ksp.compiler.RouteSymbolProcessorProvider
-cn.jailedbird.arouter.ksp.compiler.InterceptorSymbolProcessorProvider
-cn.jailedbird.arouter.ksp.compiler.AutowiredSymbolProcessorProvider
+cn.jailedbird.arouter.ksp.compiler.RoutePageSymbolProcessorProvider
