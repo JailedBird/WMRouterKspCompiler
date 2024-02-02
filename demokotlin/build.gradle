@@ -1,12 +1,12 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+//apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
-apply plugin: 'com.google.devtools.ksp'
+//apply plugin: 'com.google.devtools.ksp'
 
-ksp {
-    arg("hash", "demokotlin")
-}
+//ksp {
+//    arg("hash", "demokotlin")
+//}
 
 android {
     compileSdk 33
@@ -41,7 +41,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     api project(path: ':demolib2')
     implementation project(":adapter-kotlin-coroutines")
-    ksp project(path: ':compiler')
+//    ksp project(path: ':compiler')
     implementation 'io.github.meituan-dianping:router:1.2.1'
-//    annotationProcessor "io.github.meituan-dianping:compiler:1.2.1"
+    kapt "io.github.meituan-dianping:compiler:1.2.1"
 }
