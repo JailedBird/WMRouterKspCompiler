@@ -121,7 +121,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                     continue
                 }
                 val page: RouterPage =
-                    element.getAnnotationsByType(RouterPage::class).firstOrNull() ?: continue
+                    element.findAnnotationWithType<RouterPage>() ?: continue
 
                 /*public class PageAnnotationInit_b6d2ec00f1c180a333609129781e87f8 implements IPageAnnotationInit {
                       public void init(PageAnnotationHandler handler) {
@@ -142,7 +142,8 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                     buildHandler(isActivity, element)
                 }
 
-                val interceptors = buildInterceptors(/*page.interceptors.toList()*/)
+                // val interceptors = buildInterceptors(/*page.interceptors.toList()*/)
+                val interceptors = CodeBlock.builder().build()
 
                 /*
                 * String[] pathList = page.path();
@@ -152,6 +153,13 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                                 handler,
                                 interceptors);
                     }*/
+                // 此处类型转换存在错误
+                // https://github.com/google/ksp/issues/1329
+                // If java annotation value is array type, it will make getAnnotationsByType throw class cast issue, it seems that in java we can declare a single value for annotation value whose type is array, like this one
+                // https://github.com/google/ksp/pull/1330
+                // java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
+
+                val paths = page.path
 
                 for (path in page.path) {
                     codeBlock.addStatement(
@@ -221,7 +229,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                     .build()
 
             val file =
-                FileSpec.builder( Const.GEN_PKG, genClassName)
+                FileSpec.builder(Const.GEN_PKG, genClassName)
                     .addType(
                         TypeSpec.classBuilder(ClassName(Const.GEN_PKG, genClassName))
                             .addKdoc(Consts.WARNING_TIPS)
