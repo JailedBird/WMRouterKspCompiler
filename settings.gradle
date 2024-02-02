@@ -20,4 +20,11 @@ dependencyResolutionManagement {
 }
 rootProject.name = "ArouterKspCompiler"
 include ':app'
+include ':adapter-kotlin-coroutines'
+include ':adapter-rxjava3'
+include ':router-result-adapter'
+include ':app'
+include ':demolib1'
+include ':demolib2'
+include ':demokotlin'
 include ':compiler'
