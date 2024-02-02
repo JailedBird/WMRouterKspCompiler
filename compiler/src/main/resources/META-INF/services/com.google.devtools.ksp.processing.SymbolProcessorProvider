@@ -1,3 +1,3 @@
-cn.jailedbird.arouter.ksp.compiler.RoutePageSymbolProcessorProvider
+cn.jailedbird.arouter.ksp.compiler.RouterPageSymbolProcessorProvider
 cn.jailedbird.arouter.ksp.compiler.RouterUriSymbolProcessorProvider
 cn.jailedbird.arouter.ksp.compiler.RouterRegexSymbolProcessorProvider

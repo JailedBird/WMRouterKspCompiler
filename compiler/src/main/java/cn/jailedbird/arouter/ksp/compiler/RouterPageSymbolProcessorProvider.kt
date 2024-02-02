@@ -1,12 +1,11 @@
 package cn.jailedbird.arouter.ksp.compiler
 
+import cn.jailedbird.arouter.ksp.compiler.Helper.findModuleHashName
 import cn.jailedbird.arouter.ksp.compiler.utils.Consts
 import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
-import cn.jailedbird.arouter.ksp.compiler.utils.findModuleHashName
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
 import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
-import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -16,22 +15,13 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
 import com.sankuai.waimai.router.annotation.RouterPage
 import com.sankuai.waimai.router.interfaces.Const
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.writeTo
 
 @KotlinPoetKspPreview
-class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
+class RouterPageSymbolProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return RoutePageSymbolProcessor(
@@ -47,13 +37,9 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
         @Suppress("SpellCheckingInspection")
         companion object {
             private val ROUTE_CLASS_NAME = RouterPage::class.qualifiedName!!
-            private val IROUTE_GROUP_CLASSNAME = Consts.IROUTE_GROUP.quantifyNameToClassName()
-            private val IPROVIDER_GROUP_CLASSNAME = Consts.IPROVIDER_GROUP.quantifyNameToClassName()
         }
 
         private val moduleHashName = options.findModuleHashName(logger)
-        private val generateDoc = Consts.VALUE_ENABLE == options[Consts.KEY_GENERATE_DOC_NAME]
-
         override fun process(resolver: Resolver): List<KSAnnotated> {
             val symbol = resolver.getSymbolsWithAnnotation(ROUTE_CLASS_NAME)
 
@@ -174,8 +160,6 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 .putDirectly(interfaceName, fullImplName, fullImplName, false)
                 .build(codeGenerator, dependencies)
         }
-
-
 
 
         private fun buildFragmentHandler(element: KSClassDeclaration): CodeBlock {

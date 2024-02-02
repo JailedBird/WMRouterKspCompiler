@@ -5,7 +5,7 @@ import com.google.devtools.ksp.symbol.KSNode
 
 class KSPLoggerWrapper(private val logger: KSPLogger) : KSPLogger {
     companion object {
-        const val TAG = Consts.PROJECT + "::Compiler "
+        const val TAG = "WMRouter" + "::Compiler "
     }
 
     override fun error(message: String, symbol: KSNode?) {

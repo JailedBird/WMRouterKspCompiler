@@ -8,6 +8,7 @@ import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
 import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
@@ -27,6 +28,17 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 object Helper {
+
+    fun Map<String, String>.findModuleHashName(logger: KSPLogger): String {
+        val name = this[Consts.KEY_MODULE_HASH_NAME]
+        return if (!name.isNullOrEmpty()) {
+            @Suppress("RegExpSimplifiable", "KotlinConstantConditions")
+            name.replace("[^0-9a-zA-Z_]+".toRegex(), "")
+        } else {
+            logger.error(Consts.NO_MODULE_NAME_TIPS_KSP)
+            throw RuntimeException("ARouter::Compiler >>> No module name, for more information, look at gradle log.")
+        }
+    }
     fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
         val codeBlock = CodeBlock.builder()
         if (isActivity) {
@@ -130,7 +142,6 @@ object Helper {
             FileSpec.builder(Const.GEN_PKG, genClassName)
                 .addType(
                     TypeSpec.classBuilder(ClassName(Const.GEN_PKG, genClassName))
-                        .addKdoc(Consts.WARNING_TIPS)
                         .addSuperinterface(superInterfaceClassName.quantifyNameToClassName())
                         .addFunction(initMethod)
                         .build()
