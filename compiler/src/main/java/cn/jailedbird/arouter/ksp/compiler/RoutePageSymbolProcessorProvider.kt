@@ -96,6 +96,9 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
         @OptIn(KspExperimental::class)
         private fun parse(elements: List<KSClassDeclaration>) {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
+            for (i in elements) {
+                logger.info(">>> Found routes, ${i.qualifiedName?.asString()}")
+            }
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
             for (element in elements) {
@@ -139,7 +142,7 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                     buildHandler(isActivity, element)
                 }
 
-                val interceptors = buildInterceptors(page.interceptors.toList())
+                val interceptors = buildInterceptors(/*page.interceptors.toList()*/)
 
                 /*
                 * String[] pathList = page.path();
@@ -261,14 +264,14 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
             return codeBlock.build()
         }
 
-        private fun buildInterceptors(list: List<KClass<*>>?): CodeBlock {
+        private fun buildInterceptors(/*list: List<KClass<*>>?*/): CodeBlock {
             val codeBlock = CodeBlock.builder()
             // KSP 在处理Class类型的时候 貌似存在问题 例如SPI的处理中 这个待研究 暂时忽略
-            if (!list.isNullOrEmpty()) {
-                for (i in list) {
-
-                }
-            }
+//            if (!list.isNullOrEmpty()) {
+//                for (i in list) {
+//
+//                }
+//            }
 
             /*public CodeBlock buildInterceptors(List<? extends TypeMirror> interceptors) {
                     CodeBlock.Builder b = CodeBlock.builder();

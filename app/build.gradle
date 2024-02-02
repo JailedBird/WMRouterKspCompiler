@@ -8,7 +8,7 @@ apply plugin: "kotlin-kapt"
 // or--> apply plugin: 'kotlin-android'
 // or--> apply plugin: 'com.google.devtools.ksp'
 ksp {
-    arg("AROUTER_MODULE_NAME", project.getName())
+    arg("hash", project.getName())
 }
 
 android.sourceSets.all { it.java.srcDir("build/generated/ksp/${it.name}/kotlin/") }
@@ -48,7 +48,8 @@ dependencies {
     api project(path: ':demolib1')
     api project(path: ':demokotlin')
     implementation project(":router-result-adapter")
-    kapt "io.github.meituan-dianping:compiler:1.2.1"
+    // kapt "io.github.meituan-dianping:compiler:1.2.1"
+    ksp project(":compiler")
     implementation project(":adapter-rxjava3")
     implementation 'io.github.meituan-dianping:router:1.2.1'
     implementation "io.reactivex.rxjava3:rxjava:3.0.13"
