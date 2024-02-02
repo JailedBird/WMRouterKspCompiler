@@ -122,10 +122,10 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 val handler = if (isFragment || isFragmentV4) {
                     buildFragmentHandler(element)
                 } else {
-                    buildHandler(isActivity, element)
+                    Helper.buildHandler(isActivity, element)
                 }
 
-                val interceptors = buildInterceptors(page)
+                val interceptors = Helper.buildInterceptors(page)
 
 
                 /*
@@ -176,36 +176,6 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
         }
 
 
-        private fun generatePageAnnotationInitFile(
-            methodCodeBlock: CodeBlock,
-            genClassName: String,
-            dependencies: Iterable<KSFile>
-        ) {
-            val handlerParameterSpec = ParameterSpec.builder(
-                "handler",
-                Const.PAGE_ANNOTATION_HANDLER_CLASS.quantifyNameToClassName()
-            ).build()
-
-            val initMethod: FunSpec =
-                FunSpec.builder(Const.INIT_METHOD)
-                    .addModifiers(KModifier.PUBLIC, KModifier.OVERRIDE)
-                    .addParameter(handlerParameterSpec)
-                    .addCode(methodCodeBlock)
-                    .build()
-
-            val file =
-                FileSpec.builder(Const.GEN_PKG, genClassName)
-                    .addType(
-                        TypeSpec.classBuilder(ClassName(Const.GEN_PKG, genClassName))
-                            .addKdoc(Consts.WARNING_TIPS)
-                            .addSuperinterface(Const.PAGE_ANNOTATION_INIT_CLASS.quantifyNameToClassName())
-                            .addFunction(initMethod)
-                            .build()
-                    )
-                    .build()
-
-            file.writeTo(codeGenerator, true, dependencies)
-        }
 
 
         private fun buildFragmentHandler(element: KSClassDeclaration): CodeBlock {
@@ -215,40 +185,6 @@ class RoutePageSymbolProcessorProvider : SymbolProcessorProvider {
                 Const.FRAGMENT_HANDLER_CLASS.quantifyNameToClassName(),
                 element.qualifiedName?.asString()
             )
-            return codeBlock.build()
-        }
-
-        private fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            if (isActivity) {
-                codeBlock.add("%S", element.qualifiedName?.asString())
-            } else {
-                codeBlock.add("%T()", element.toClassName())
-            }
-            return codeBlock.build()
-        }
-
-        @OptIn(KspExperimental::class)
-        private fun buildInterceptors(page: RouterPage): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
-                page.interceptors.asList()
-            } catch (e: KSTypesNotPresentException) {
-                e.ksTypes
-            }
-            for (interceptor in interceptors) {
-                if (interceptor is KSType) {
-                    val declaration = interceptor.declaration
-                    if (declaration is KSClassDeclaration) {
-                        if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
-                            declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
-                        ) {
-                            logger.info("fuck ${declaration.toClassName()}")
-                            codeBlock.add(", %T()", declaration.toClassName())
-                        }
-                    }
-                }
-            }
             return codeBlock.build()
         }
 

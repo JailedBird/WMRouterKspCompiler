@@ -67,12 +67,9 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                     logger.exception(e)
                 }
             }
-
             return emptyList()
         }
 
-
-        @OptIn(KspExperimental::class)
         private fun parse(elements: List<KSClassDeclaration>) {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
             val codeBlock = CodeBlock.builder()
@@ -103,10 +100,9 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                 element.containingFile?.let {
                     dependencies.add(it)
                 }
-                val handler = buildHandler(isActivity, element)
+                val handler = Helper.buildHandler(isActivity, element)
 
-                val interceptors = buildInterceptors(uri)
-
+                val interceptors = Helper.buildInterceptors(uri)
 
                 /*
                 * String[] pathList = page.path();
@@ -156,60 +152,6 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
             ServiceInitClassBuilder(className)
                 .putDirectly(interfaceName, fullImplName, fullImplName, false)
                 .build(codeGenerator, dependencies)
-        }
-
-
-        private fun generatePageAnnotationInitFile(
-            methodCodeBlock: CodeBlock,
-            genClassName: String,
-            dependencies: Iterable<KSFile>
-        ) {
-
-        }
-
-
-        private fun buildFragmentHandler(element: KSClassDeclaration): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            codeBlock.add(
-                "%T(%S)",
-                Const.FRAGMENT_HANDLER_CLASS.quantifyNameToClassName(),
-                element.qualifiedName?.asString()
-            )
-            return codeBlock.build()
-        }
-
-        private fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            if (isActivity) {
-                codeBlock.add("%S", element.qualifiedName?.asString())
-            } else {
-                codeBlock.add("%T()", element.toClassName())
-            }
-            return codeBlock.build()
-        }
-
-        @OptIn(KspExperimental::class)
-        private fun buildInterceptors(page: RouterUri): CodeBlock {
-            val codeBlock = CodeBlock.builder()
-            val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
-                page.interceptors.asList()
-            } catch (e: KSTypesNotPresentException) {
-                e.ksTypes
-            }
-            for (interceptor in interceptors) {
-                if (interceptor is KSType) {
-                    val declaration = interceptor.declaration
-                    if (declaration is KSClassDeclaration) {
-                        if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
-                            declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
-                        ) {
-                            logger.info("fuck ${declaration.toClassName()}")
-                            codeBlock.add(", %T()", declaration.toClassName())
-                        }
-                    }
-                }
-            }
-            return codeBlock.build()
         }
 
 

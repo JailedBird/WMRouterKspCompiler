@@ -11,7 +11,9 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
+import com.sankuai.waimai.router.annotation.RouterPage
 import com.sankuai.waimai.router.annotation.RouterRegex
+import com.sankuai.waimai.router.annotation.RouterUri
 import com.sankuai.waimai.router.interfaces.Const
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -37,6 +39,52 @@ object Helper {
 
     @OptIn(KspExperimental::class)
     fun buildInterceptors(page: RouterRegex): CodeBlock {
+        val codeBlock = CodeBlock.builder()
+        val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
+            page.interceptors.asList()
+        } catch (e: KSTypesNotPresentException) {
+            e.ksTypes
+        }
+        for (interceptor in interceptors) {
+            if (interceptor is KSType) {
+                val declaration = interceptor.declaration
+                if (declaration is KSClassDeclaration) {
+                    if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
+                        declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
+                    ) {
+                        codeBlock.add(", %T()", declaration.toClassName())
+                    }
+                }
+            }
+        }
+        return codeBlock.build()
+    }
+
+    @OptIn(KspExperimental::class)
+    fun buildInterceptors(page: RouterPage): CodeBlock {
+        val codeBlock = CodeBlock.builder()
+        val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
+            page.interceptors.asList()
+        } catch (e: KSTypesNotPresentException) {
+            e.ksTypes
+        }
+        for (interceptor in interceptors) {
+            if (interceptor is KSType) {
+                val declaration = interceptor.declaration
+                if (declaration is KSClassDeclaration) {
+                    if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
+                        declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
+                    ) {
+                        codeBlock.add(", %T()", declaration.toClassName())
+                    }
+                }
+            }
+        }
+        return codeBlock.build()
+    }
+
+    @OptIn(KspExperimental::class)
+    fun buildInterceptors(page: RouterUri): CodeBlock {
         val codeBlock = CodeBlock.builder()
         val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
             page.interceptors.asList()
