@@ -8,7 +8,11 @@
 
 
 
-## 接入方案
+*项目结构：compiler模块是新增的注解处理的核心模块，其他模块都是拷贝自WMRouter，用作测试用例和跑通编译*
+
+
+
+## 接入方法
 
 *PS：开发中发现低版本ksp存在严重bug，所以此项目最低ksp版本需要保证1.8.20-1.0.10+， 因此使用kotlin 1.8.20 & ksp 1.8.20-1.0.11*
 
@@ -96,8 +100,7 @@ java.lang.ClassCastException: class java.lang.String cannot be cast to class [Lj
 	at cn.jailedbird.arouter.ksp.compiler.RoutePageSymbolProcessorProvider$RoutePageSymbolProcessor.process(RoutePageSymbolProcessorProvider.kt:85)
 ```
 
-官方 [issue1329](https://github.com/google/ksp/issues/1329
-https://github.com/google/ksp/issues/1330) [issue1330](https://github.com/google/ksp/issues/1330) 提出和修复此问题；
+官方 [issue1329](https://github.com/google/ksp/issues/1329)  [issue1330](https://github.com/google/ksp/issues/1330) 提出和修复此问题；
 
 ksp在[1.8.20-1.0.10](https://github.com/google/ksp/releases/tag/1.8.20-1.0.10) 正式修复此问题，这也是本项目需要 *ksp1.8.20-1.0.10+* 的原因，kotlin1.8.20最新的ksp版本是ksp1.8.20-1.0.11； 所以优先使用这个版本；
 
@@ -191,3 +194,10 @@ com.google.devtools.ksp.KSTypesNotPresentException: com.google.devtools.ksp.KSTy
     }
 ```
 
+
+
+
+
+## 其他
+
+细节持续完善中🎉
