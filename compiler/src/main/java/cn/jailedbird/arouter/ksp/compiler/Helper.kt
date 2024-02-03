@@ -3,6 +3,7 @@
 package cn.jailedbird.arouter.ksp.compiler
 
 import cn.jailedbird.arouter.ksp.compiler.utils.Consts
+import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
 import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
 import com.google.devtools.ksp.KSTypesNotPresentException
@@ -12,10 +13,6 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
-import com.sankuai.waimai.router.annotation.RouterPage
-import com.sankuai.waimai.router.annotation.RouterRegex
-import com.sankuai.waimai.router.annotation.RouterService
-import com.sankuai.waimai.router.annotation.RouterUri
 import com.sankuai.waimai.router.interfaces.Const
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -56,7 +53,7 @@ object Helper {
     fun buildInterceptors(block: () -> List<KClass<*>>): CodeBlock {
         val codeBlock = CodeBlock.builder()
         val interceptors: List<Any> = try { // KSTypesNotPresentException will be thrown
-            block.invoke()
+            block.invoke() // Notice Custom Interceptor class must be throw KSTypesNotPresentException
         } catch (e: KSTypesNotPresentException) {
             e.ksTypes
         }
@@ -64,9 +61,7 @@ object Helper {
             if (interceptor is KSType) {
                 val declaration = interceptor.declaration
                 if (declaration is KSClassDeclaration) {
-                    if (!declaration.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT) &&
-                        declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)
-                    ) {
+                    if (!declaration.isAbstract() && declaration.isSubclassOf(Const.URI_INTERCEPTOR_CLASS)) {
                         codeBlock.add(", %T()", declaration.toClassName())
                     }
                 }
