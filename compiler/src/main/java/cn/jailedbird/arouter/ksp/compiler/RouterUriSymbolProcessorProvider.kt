@@ -119,7 +119,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
 
             val genClassName = "UriAnnotationInit" + Const.SPLITTER + moduleHashName
             // val handlerClassName = Const.PAGE_ANNOTATION_HANDLER_CLASS
-            val interfaceName = Const.PAGE_ANNOTATION_INIT_CLASS
+            val interfaceName = Const.URI_ANNOTATION_INIT_CLASS
             Helper.buildHandlerInitClass(
                 codeBlock.build(),
                 genClassName,
