@@ -61,6 +61,7 @@ class ServiceInitClassBuilder(
         val methodSpec =
             FunSpec.builder(Const.INIT_METHOD)
                 .addModifiers(KModifier.PUBLIC)
+                .addAnnotation(JvmStatic::class)
                 .addCode(builder.build()).build()
         val file =
             FileSpec.builder(Const.GEN_PKG_SERVICE, className)
