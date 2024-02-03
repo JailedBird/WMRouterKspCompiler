@@ -1,6 +1,7 @@
 package cn.jailedbird.arouter.ksp.compiler
 
-import cn.jailedbird.arouter.ksp.compiler.Helper.findModuleHashName
+import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
+import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
 import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
@@ -35,7 +36,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
             private val ROUTE_CLASS_NAME = RouterUri::class.qualifiedName!!
         }
 
-        private val moduleHashName = options.findModuleHashName(logger)
+        private val moduleHashName = options.findModuleID(logger)
 
         override fun process(resolver: Resolver): List<KSAnnotated> {
             val symbol = resolver.getSymbolsWithAnnotation(ROUTE_CLASS_NAME)
@@ -83,9 +84,9 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                 element.containingFile?.let {
                     dependencies.add(it)
                 }
-                val handler = Helper.buildHandler(isActivity, element)
+                val handler = WMRouterHelper.buildHandler(isActivity, element)
 
-                val interceptors = Helper.buildInterceptors { uri.interceptors.asList() }
+                val interceptors = WMRouterHelper.buildInterceptors { uri.interceptors.asList() }
 
                 /*
                 * String[] pathList = page.path();
@@ -120,7 +121,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
             val genClassName = "UriAnnotationInit" + Const.SPLITTER + moduleHashName
             // val handlerClassName = Const.PAGE_ANNOTATION_HANDLER_CLASS
             val interfaceName = Const.URI_ANNOTATION_INIT_CLASS
-            Helper.buildHandlerInitClass(
+            WMRouterHelper.buildHandlerInitClass(
                 codeBlock.build(),
                 genClassName,
                 Const.URI_ANNOTATION_HANDLER_CLASS,

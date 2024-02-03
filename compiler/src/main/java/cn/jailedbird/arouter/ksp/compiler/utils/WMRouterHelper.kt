@@ -1,11 +1,7 @@
 @file:OptIn(KotlinPoetKspPreview::class)
 
-package cn.jailedbird.arouter.ksp.compiler
+package cn.jailedbird.arouter.ksp.compiler.utils
 
-import cn.jailedbird.arouter.ksp.compiler.utils.Consts
-import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
-import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
-import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
 import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -26,19 +22,27 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import kotlin.reflect.KClass
 
-object Helper {
+object WMRouterHelper {
+    private const val NO_MODULE_NAME_TIPS_KSP =
+        "These no module ID for WMRouter, at 'build.gradle', like :\n" +
+                "ksp {\n" +
+                "    arg(\"WM_ROUTER_ID\", \"module_app\") {\n" +
+                "}\n" +
+                "Notice: different module's WM_ROUTER_ID need to be unique!\n"
+    private const val WM_ROUTER_ID = "WM_ROUTER_ID"
 
-    fun Map<String, String>.findModuleHashName(logger: KSPLogger): String {
-        val name = this[Consts.KEY_MODULE_HASH_NAME]
+    fun Map<String, String>.findModuleID(logger: KSPLogger): String {
+        val name = this[WM_ROUTER_ID]
         return if (!name.isNullOrEmpty()) {
-            @Suppress("RegExpSimplifiable", "KotlinConstantConditions")
+            @Suppress("RegExpSimplifiable")
             name.replace("[^0-9a-zA-Z_]+".toRegex(), "")
         } else {
-            logger.error(Consts.NO_MODULE_NAME_TIPS_KSP)
-            throw RuntimeException("ARouter::Compiler >>> No module name, for more information, look at gradle log.")
+            logger.error(NO_MODULE_NAME_TIPS_KSP)
+            throw RuntimeException("WMRouter::Compiler >>> No module name, for more information, look at gradle log.")
         }
     }
 
+    @OptIn(KotlinPoetKspPreview::class)
     fun buildHandler(isActivity: Boolean, element: KSClassDeclaration): CodeBlock {
         val codeBlock = CodeBlock.builder()
         if (isActivity) {
@@ -101,7 +105,6 @@ object Helper {
                 .build()
 
         file.writeTo(codeGenerator, true, dependencies)
-
     }
 
     @OptIn(KspExperimental::class)

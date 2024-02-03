@@ -1,6 +1,7 @@
 package cn.jailedbird.arouter.ksp.compiler
 
-import cn.jailedbird.arouter.ksp.compiler.Helper.findModuleHashName
+import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
+import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
 import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
 import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
@@ -15,12 +16,10 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
-import com.google.devtools.ksp.symbol.KSType
 import com.sankuai.waimai.router.annotation.RouterService
 import com.sankuai.waimai.router.interfaces.Const
 import com.sankuai.waimai.router.service.ServiceImpl
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import kotlin.math.log
 
 @KotlinPoetKspPreview
 class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
@@ -40,7 +39,7 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
             private val ROUTE_CLASS_NAME = RouterService::class.qualifiedName!!
         }
 
-        private val moduleHashName = options.findModuleHashName(logger)
+        private val moduleHashName = options.findModuleID(logger)
         override fun process(resolver: Resolver): List<KSAnnotated> {
             val symbol = resolver.getSymbolsWithAnnotation(ROUTE_CLASS_NAME)
 
@@ -85,7 +84,7 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                     e.ksTypes
                 }
                 val typeMirrors =
-                    Helper.parseAnnotationClassParameter { service.interfaces.asList() }
+                    WMRouterHelper.parseAnnotationClassParameter { service.interfaces.asList() }
 
                 val keys = service.key
                 val implementationName: String = element.qualifiedName?.asString()!!

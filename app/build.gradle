@@ -8,7 +8,7 @@ apply plugin: "kotlin-kapt"
 // or--> apply plugin: 'kotlin-android'
 // or--> apply plugin: 'com.google.devtools.ksp'
 ksp {
-    arg("hash", project.getName())
+    arg("WM_ROUTER_ID", project.getName())
 }
 
 android.sourceSets.all { it.java.srcDir("build/generated/ksp/${it.name}/kotlin/") }
