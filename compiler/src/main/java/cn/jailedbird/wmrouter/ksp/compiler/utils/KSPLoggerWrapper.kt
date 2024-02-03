@@ -25,7 +25,7 @@ class KSPLoggerWrapper(private val logger: KSPLogger) : KSPLogger {
      * */
     override fun info(message: String, symbol: KSNode?) {
         if (message.isNotEmpty()) {
-            logger.warn("$TAG${message}", symbol)
+            logger.info("$TAG${message}", symbol)
         }
     }
 
