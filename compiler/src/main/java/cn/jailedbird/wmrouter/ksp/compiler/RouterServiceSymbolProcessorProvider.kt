@@ -23,12 +23,12 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return RoutePageSymbolProcessor(
+        return RouterServiceSymbolProcessor(
             KSPLoggerWrapper(environment.logger), environment.codeGenerator, environment.options
         )
     }
 
-    class RoutePageSymbolProcessor(
+    class RouterServiceSymbolProcessor(
         private val logger: KSPLoggerWrapper,
         private val codeGenerator: CodeGenerator,
         options: Map<String, String>
