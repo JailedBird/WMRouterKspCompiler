@@ -49,7 +49,10 @@ dependencies {
     api project(path: ':demokotlin')
     implementation project(":router-result-adapter")
     // kapt "io.github.meituan-dianping:compiler:1.2.1"
+    // 本地依赖 开发阶段可以将compiler模块拷贝到具体项目 试试修复bug
     ksp project(":compiler")
+    // jitpack 依赖
+    // ksp "com.github.JailedBird:WMRouterKspCompiler:1.8.20-0.0.1"
     implementation project(":adapter-rxjava3")
     implementation 'io.github.meituan-dianping:router:1.2.1'
     implementation "io.reactivex.rxjava3:rxjava:3.0.13"

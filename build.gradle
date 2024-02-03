@@ -5,6 +5,7 @@ buildscript {
     repositories {
         mavenCentral()
         google()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         classpath "io.github.meituan-dianping:plugin:1.2.1"
