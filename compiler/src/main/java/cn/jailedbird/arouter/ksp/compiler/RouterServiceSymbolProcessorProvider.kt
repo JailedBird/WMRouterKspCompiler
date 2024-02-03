@@ -20,6 +20,7 @@ import com.sankuai.waimai.router.annotation.RouterService
 import com.sankuai.waimai.router.interfaces.Const
 import com.sankuai.waimai.router.service.ServiceImpl
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import kotlin.math.log
 
 @KotlinPoetKspPreview
 class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
@@ -78,6 +79,7 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 }
 
                 val interfacesAny: List<Any> = try { // KSTypesNotPresentException will be thrown
+                    logger.info("Notice!!! System class will be resolved ${service.interfaces.asList()} ")
                     service.interfaces.asList()
                 } catch (e: KSTypesNotPresentException) {
                     e.ksTypes
@@ -97,11 +99,14 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 val singleton = service.singleton
                 val defaultImpl = service.defaultImpl
                 val elementName = element.qualifiedName!!.asString()
+                logger.info("fuckyou $elementName")
+                if (elementName.contains("TestPathService1")) {
 
+                }
                 for (mirror in typeMirrors) {
                     val interfaceName: String = mirror.qualifiedName!!.asString()
-
-                    if (element.isAbstract() || !element.isSubclassOf(mirror.qualifiedName!!.asString())) {
+                    logger.info("\tfuck $elementName -- > $interfaceName")
+                    if (element.isAbstract() || !element.isSubclassOf(interfaceName)) {
                         val msg =
                             "The $elementName does not implement the interface $interfaceName annotated with the @RouterService annotation."
                         throw RuntimeException(msg)
@@ -134,25 +139,14 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
             return mEntityMap
         }
 
-
         private fun generateFile(map: HashMap<String, Entity>, dependencies: MutableSet<KSFile>) {
-            /*ServiceInitClassBuilder generator = new ServiceInitClassBuilder("ServiceInit" + Const.SPLITTER + mHash);
-            for (Map.Entry<String, Entity> entry : mEntityMap.entrySet()) {
-                for (ServiceImpl service : entry.getValue().getMap().values()) {
-                generator.put(entry.getKey(), service.getKey(), service.getImplementation(), service.isSingleton());
-            }
-            }
-            generator.build();*/
             val generator = ServiceInitClassBuilder("ServiceInit" + Const.SPLITTER + moduleHashName)
             for ((key, value) in map.entries) {
                 for (service in value.map.values) {
                     generator.put(key, service.key, service.implementation, service.isSingleton)
                 }
             }
-
             generator.build(codeGenerator, dependencies)
-
-
         }
 
     }
