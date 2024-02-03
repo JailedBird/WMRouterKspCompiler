@@ -1,9 +1,10 @@
 package cn.jailedbird.arouter.ksp.compiler
 
+import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
-import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
+import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -60,10 +61,7 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
             for (element in elements) {
-                // Judge is Abstract class
-                val isAbstract: Boolean =
-                    element.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT)
-                if (isAbstract) {
+                if (element.isAbstract()) {
                     continue
                 }
                 val type: Int =

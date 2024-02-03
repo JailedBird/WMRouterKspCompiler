@@ -4,6 +4,23 @@
 1、 使用KSP解析 Java注解中的数组 会出现类型转换错误
 
 ```
+/*
+* String[] pathList = page.path();
+    for (String path : pathList) {
+        builder.addStatement("handler.register($S, $L$L)",
+                path,
+                handler,
+                interceptors);
+    }*/
+// 此处类型转换存在错误
+// https://github.com/google/ksp/issues/1329
+// If java annotation value is array type, it will make getAnnotationsByType throw class cast issue, it seems that in java we can declare a single value for annotation value whose type is array, like this one
+// https://github.com/google/ksp/pull/1330
+// java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
+
+```
+
+```
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
 public @interface RouterPage {

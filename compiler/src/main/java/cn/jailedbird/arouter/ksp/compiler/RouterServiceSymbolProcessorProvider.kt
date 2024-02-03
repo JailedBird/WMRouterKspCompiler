@@ -1,13 +1,11 @@
 package cn.jailedbird.arouter.ksp.compiler
 
+import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
-import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
 import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
-import com.google.devtools.ksp.KSTypesNotPresentException
-import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
@@ -61,7 +59,6 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
             return emptyList()
         }
 
-        @OptIn(KspExperimental::class)
         private fun parse(
             elements: List<KSClassDeclaration>,
             dependencies: MutableSet<KSFile>
@@ -77,13 +74,7 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                     dependencies.add(it)
                 }
 
-                val interfacesAny: List<Any> = try { // KSTypesNotPresentException will be thrown
-                    logger.info("Notice!!! System class will be resolved ${service.interfaces.asList()} ")
-                    service.interfaces.asList()
-                } catch (e: KSTypesNotPresentException) {
-                    e.ksTypes
-                }
-                val typeMirrors =
+                val interfaceNames =
                     WMRouterHelper.parseAnnotationClassParameter { service.interfaces.asList() }
 
                 val keys = service.key
@@ -91,11 +82,8 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 val singleton = service.singleton
                 val defaultImpl = service.defaultImpl
                 val elementName = element.qualifiedName!!.asString()
-                logger.info("fuckyou $elementName")
 
-                for (mirror in typeMirrors) {
-                    val interfaceName: String = mirror
-                    logger.info("\tfuck $elementName -- > $interfaceName")
+                for (interfaceName in interfaceNames) {
                     if (element.isAbstract() || !element.isSubclassOf(interfaceName)) {
                         val msg =
                             "The $elementName does not implement the interface $interfaceName annotated with the @RouterService annotation."
@@ -121,7 +109,7 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                             entity.put(key, implementationName, singleton)
                         }
                     } else {
-                        entity.put(null, implementationName, singleton);
+                        entity.put(null, implementationName, singleton)
                     }
 
                 }
@@ -159,14 +147,6 @@ class Entity(private val mInterfaceName: String) {
         }
     }
 
-    /*val contents: List<String>
-        get() {
-            val list: MutableList<String> = ArrayList()
-            for (impl in mMap.values) {
-                list.add(impl.toConfig())
-            }
-            return list
-        }*/
 }
 
 

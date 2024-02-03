@@ -22,7 +22,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import kotlin.reflect.KClass
 
-object WMRouterHelper {
+internal object WMRouterHelper {
     private const val NO_MODULE_NAME_TIPS_KSP =
         "These no module ID for WMRouter, at 'build.gradle', like :\n" +
                 "ksp {\n" +

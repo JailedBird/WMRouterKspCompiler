@@ -55,7 +55,6 @@ class ServiceInitClassBuilder(
         return this
     }
 
-
     @OptIn(KotlinPoetKspPreview::class)
     fun build(codeGenerator: CodeGenerator, dependencies: Iterable<KSFile>) {
         val methodSpec =

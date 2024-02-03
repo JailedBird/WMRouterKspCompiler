@@ -1,9 +1,10 @@
 package cn.jailedbird.arouter.ksp.compiler
 
+import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
 import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
-import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
 import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
+import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
 import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -59,10 +60,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
             for (element in elements) {
-                // Judge is Abstract class
-                val isAbstract: Boolean =
-                    element.modifiers.contains(com.google.devtools.ksp.symbol.Modifier.ABSTRACT)
-                if (isAbstract) {
+                if (element.isAbstract()) {
                     continue
                 }
                 val type: Int =
@@ -88,20 +86,6 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
 
                 val interceptors = WMRouterHelper.buildInterceptors { uri.interceptors.asList() }
 
-                /*
-                * String[] pathList = page.path();
-                    for (String path : pathList) {
-                        builder.addStatement("handler.register($S, $L$L)",
-                                path,
-                                handler,
-                                interceptors);
-                    }*/
-                // 此处类型转换存在错误
-                // https://github.com/google/ksp/issues/1329
-                // If java annotation value is array type, it will make getAnnotationsByType throw class cast issue, it seems that in java we can declare a single value for annotation value whose type is array, like this one
-                // https://github.com/google/ksp/pull/1330
-                // java.lang.ClassCastException: class java.lang.String cannot be cast to class [Ljava.lang.String; (java.lang.String and [Ljava.lang.String; are in module java.base of loader 'bootstrap')
-
                 logger.info(">>> Found routes, ${element.qualifiedName?.asString()}")
                 for (path in uri.path) {
                     logger.info(">>> \tpath is $path")
@@ -117,9 +101,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                 }
             }
 
-
             val genClassName = "UriAnnotationInit" + Const.SPLITTER + moduleHashName
-            // val handlerClassName = Const.PAGE_ANNOTATION_HANDLER_CLASS
             val interfaceName = Const.URI_ANNOTATION_INIT_CLASS
             WMRouterHelper.buildHandlerInitClass(
                 codeBlock.build(),
@@ -137,7 +119,6 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                 .putDirectly(interfaceName, fullImplName, fullImplName, false)
                 .build(codeGenerator, dependencies)
         }
-
 
     }
 
