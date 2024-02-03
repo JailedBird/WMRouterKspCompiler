@@ -8,17 +8,17 @@
 
 
 
-*项目结构：compiler模块是新增的注解处理的核心模块，其他模块都是拷贝自WMRouter，用作测试用例和跑通编译*
+*PS：项目结构看着比较乱，所以特别说明下：compiler模块是新增的ksp注解处理模块，其他模块都是拷贝自WMRouter，用作测试用例和跑通编译*
 
 
 
 ## 接入方法
 
-*PS：开发中发现低版本ksp存在严重bug，所以此项目最低ksp版本需要保证1.8.20-1.0.10+， 因此使用kotlin 1.8.20 & ksp 1.8.20-1.0.11*
+***PS：本项目开发中发现低版本ksp对特定场景的解析存在严重bug，最低ksp版本需要保证1.8.20-1.0.10+， 因此使用kotlin 1.8.20 & ksp 1.8.20-1.0.11***
 
 
 
-0、 插件发布在[jitpack](https://jitpack.io/#JailedBird/WMRouterKspCompiler)，目前是测试阶段； 
+0、 插件发布在[jitpack](https://jitpack.io/#JailedBird/WMRouterKspCompiler)，请添加jitpack仓库（目前是测试阶段） 
 
 ```
 maven { url 'https://jitpack.io' }
@@ -26,7 +26,7 @@ maven { url 'https://jitpack.io' }
 
 
 
-1、 导入ksp插件 & 添加jitpack仓库
+1、 项目级别导入ksp插件
 
 ```
 plugins {
@@ -40,7 +40,7 @@ plugins {
 
 2、 需要使用此插件的模块，模块build.gradle需要做出如下配置
 
-- 导入ksp插件本身
+- 模块启用ksp插件
 
   ```
   plugins {
@@ -51,7 +51,9 @@ plugins {
 
   
 
-- 配置参数，这一步是原插件没有的，原插件是使用文件名称的哈希摘构成生成文件名称，但是这种存在变化的输出文件名称可能破坏ksp的增量编译特性，因此这里强制配置； 每个模块不同即可，如果相同、未配置，编译阶段就会报错；
+- 参数WM_ROUTER_ID配置；
+
+  **注意：**原插件并没有这个配置，原插件是使用标记了注解的类的全限定路径的哈希摘要区分生成文件名称，这导致同一模块编译可能生成不同文件名的编译产物；**根据我对ksp增量编译机制的了解，这可能会破坏KSP的增量编译机制**，因此本插件强制配置此参数； 每个模块WM_ROUTER_ID的值不同即可，如果相同、未配置，编译阶段就会报错给出提示；
 
   ```
   ksp {
@@ -62,7 +64,7 @@ plugins {
 - 导入插件  
 
   ```
-  // 本地依赖 开发阶段可以将compiler模块拷贝到具体项目 试试修复bug
+  // 本地依赖 开发阶段可以将compiler模块拷贝到具体项目 实时修复bug
   // ksp project(":compiler")
   ksp "com.github.JailedBird:WMRouterKspCompiler:1.8.20-0.0.1"
   ```
@@ -73,13 +75,13 @@ plugins {
 
 ## 关键问题记录
 
-1、 使用KSP解析 Java注解中的数组 会出现类型转换错误 
+1、 使用低版本KSP解析 Java注解中的数组 会出现类型转换错误 
 
 复现记录：e45bb04b67db7d9938c34842b86099729bd71984
 
 修复记录：4e317601accdb062fcffa3c028b674628c592c42
 
-问题描述：Java注解类中的数组，会被注解非数组的对象类，比如path的String数组会被解析String类，从而导致类型转换错误
+问题描述：Java注解类中的数组，会被解析为非数组的对象类，如下的path的String数组类会被解析String类，从而导致类型转换错误
 
 ```
 @Target(ElementType.TYPE)
@@ -100,9 +102,9 @@ java.lang.ClassCastException: class java.lang.String cannot be cast to class [Lj
 	at cn.jailedbird.arouter.ksp.compiler.RoutePageSymbolProcessorProvider$RoutePageSymbolProcessor.process(RoutePageSymbolProcessorProvider.kt:85)
 ```
 
-官方 [issue1329](https://github.com/google/ksp/issues/1329)  [issue1330](https://github.com/google/ksp/issues/1330) 提出和修复此问题；
+官方 [issue1329](https://github.com/google/ksp/issues/1329) 、 [issue1330](https://github.com/google/ksp/issues/1330) 提出和修复此问题；
 
-ksp在[1.8.20-1.0.10](https://github.com/google/ksp/releases/tag/1.8.20-1.0.10) 正式修复此问题，这也是本项目需要 *ksp1.8.20-1.0.10+* 的原因，kotlin1.8.20最新的ksp版本是ksp1.8.20-1.0.11； 所以优先使用这个版本；
+KSP在[1.8.20-1.0.10](https://github.com/google/ksp/releases/tag/1.8.20-1.0.10) 正式修复此问题，这也是本项目需要 *ksp1.8.20-1.0.10+* 的原因，kotlin1.8.20最新的ksp版本是ksp1.8.20-1.0.11， 所以项目优先使用这个版本；
 
 
 
@@ -143,7 +145,7 @@ com.google.devtools.ksp.KSTypesNotPresentException: com.google.devtools.ksp.KSTy
 
 
 
-我实验出的具体的规则：
+实验出的具体的规则：
 
 - Class数组中，如果存在任何一个自定义的类，那么一定会KSTypesNotPresentException
 - 当且全为系统类型的时候，那么不会抛出异常，可以解析对应Class
@@ -159,15 +161,15 @@ com.google.devtools.ksp.KSTypesNotPresentException: com.google.devtools.ksp.KSTy
 测试用例：这里例子中，interfaces = Object.class可以被正常解析出Class类
 
 ```
-    @RouterService(interfaces = Object.class, key = "/service/test_annotation_1")
-    public static class TestPathService1 {
+@RouterService(interfaces = Object.class, key = "/service/test_annotation_1")
+public static class TestPathService1 {
 
-    }
+}
 
-    @RouterService(interfaces = Object.class, key = "/service/test_annotation_2")
-    public static class TestPathService2 {
+@RouterService(interfaces = Object.class, key = "/service/test_annotation_2")
+public static class TestPathService2 {
 
-    }
+}
 ```
 
 
@@ -175,23 +177,23 @@ com.google.devtools.ksp.KSTypesNotPresentException: com.google.devtools.ksp.KSTy
 正确代码：同时兼顾异常分支和正常分支；
 
 ```
-    fun parseAnnotationClassParameter(block: () -> List<KClass<*>>): List<String> {
-        return try { // KSTypesNotPresentException will be thrown
-            block.invoke().mapNotNull { it.qualifiedName }
-        } catch (e: KSTypesNotPresentException) {
-            val res = mutableListOf<String>()
-            val ksTypes = e.ksTypes
-            for (ksType in ksTypes) {
-                val declaration = ksType.declaration
-                if (declaration is KSClassDeclaration) {
-                    declaration.qualifiedName?.asString()?.let {
-                        res.add(it)
-                    }
+fun parseAnnotationClassParameter(block: () -> List<KClass<*>>): List<String> {
+    return try { // KSTypesNotPresentException will be thrown
+        block.invoke().mapNotNull { it.qualifiedName }
+    } catch (e: KSTypesNotPresentException) {
+        val res = mutableListOf<String>()
+        val ksTypes = e.ksTypes
+        for (ksType in ksTypes) {
+            val declaration = ksType.declaration
+            if (declaration is KSClassDeclaration) {
+                declaration.qualifiedName?.asString()?.let {
+                    res.add(it)
                 }
             }
-            res
         }
+        res
     }
+}
 ```
 
 
