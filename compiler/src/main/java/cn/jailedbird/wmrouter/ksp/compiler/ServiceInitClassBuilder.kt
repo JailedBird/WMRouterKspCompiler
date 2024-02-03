@@ -1,6 +1,6 @@
-package cn.jailedbird.arouter.ksp.compiler
+package cn.jailedbird.wmrouter.ksp.compiler
 
-import cn.jailedbird.arouter.ksp.compiler.utils.quantifyNameToClassName
+import cn.jailedbird.wmrouter.ksp.compiler.utils.quantifyNameToClassName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.symbol.KSFile
 import com.sankuai.waimai.router.interfaces.Const

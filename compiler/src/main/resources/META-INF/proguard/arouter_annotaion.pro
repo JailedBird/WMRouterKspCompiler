@@ -1,1 +1,0 @@
--keepnames class com.alibaba.android.arouter.facade.model.TypeWrapper

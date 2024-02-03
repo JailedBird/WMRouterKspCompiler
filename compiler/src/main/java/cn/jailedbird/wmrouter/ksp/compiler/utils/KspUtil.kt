@@ -1,4 +1,4 @@
-package cn.jailedbird.arouter.ksp.compiler.utils
+package cn.jailedbird.wmrouter.ksp.compiler.utils
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType

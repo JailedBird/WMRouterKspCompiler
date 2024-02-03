@@ -1,11 +1,11 @@
-package cn.jailedbird.arouter.ksp.compiler
+package cn.jailedbird.wmrouter.ksp.compiler
 
-import cn.jailedbird.arouter.ksp.compiler.utils.KSPLoggerWrapper
-import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper
-import cn.jailedbird.arouter.ksp.compiler.utils.WMRouterHelper.findModuleID
-import cn.jailedbird.arouter.ksp.compiler.utils.findAnnotationWithType
-import cn.jailedbird.arouter.ksp.compiler.utils.isAbstract
-import cn.jailedbird.arouter.ksp.compiler.utils.isSubclassOf
+import cn.jailedbird.wmrouter.ksp.compiler.utils.KSPLoggerWrapper
+import cn.jailedbird.wmrouter.ksp.compiler.utils.WMRouterHelper
+import cn.jailedbird.wmrouter.ksp.compiler.utils.WMRouterHelper.findModuleID
+import cn.jailedbird.wmrouter.ksp.compiler.utils.findAnnotationWithType
+import cn.jailedbird.wmrouter.ksp.compiler.utils.isAbstract
+import cn.jailedbird.wmrouter.ksp.compiler.utils.isSubclassOf
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor

@@ -1,6 +1,6 @@
 @file:OptIn(KotlinPoetKspPreview::class)
 
-package cn.jailedbird.arouter.ksp.compiler.utils
+package cn.jailedbird.wmrouter.ksp.compiler.utils
 
 import com.google.devtools.ksp.KSTypesNotPresentException
 import com.google.devtools.ksp.KspExperimental
