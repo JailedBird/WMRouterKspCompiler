@@ -24,6 +24,11 @@ internal fun KSClassDeclaration.isKotlinClass(): Boolean {
             isAnnotationPresent(Metadata::class)
 }
 
+@Suppress("unused")
+internal fun KSClassDeclaration.isAbstract(): Boolean {
+    return this.modifiers.contains(Modifier.ABSTRACT)
+}
+
 internal inline fun <reified T : Annotation> KSAnnotated.findAnnotationWithType(): T? {
     return getAnnotationsByType(T::class).firstOrNull()
 }

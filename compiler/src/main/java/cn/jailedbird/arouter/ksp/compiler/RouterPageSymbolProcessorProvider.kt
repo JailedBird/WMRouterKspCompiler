@@ -34,7 +34,6 @@ class RouterPageSymbolProcessorProvider : SymbolProcessorProvider {
         private val codeGenerator: CodeGenerator,
         options: Map<String, String>
     ) : SymbolProcessor {
-        @Suppress("SpellCheckingInspection")
         companion object {
             private val ROUTE_CLASS_NAME = RouterPage::class.qualifiedName!!
         }
