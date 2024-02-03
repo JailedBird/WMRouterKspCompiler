@@ -110,7 +110,7 @@ class RouterPageSymbolProcessorProvider : SymbolProcessorProvider {
                     Helper.buildHandler(isActivity, element)
                 }
 
-                val interceptors = Helper.buildInterceptors(page)
+                val interceptors = Helper.buildInterceptors{ page.interceptors.asList() }
 
 
                 /*

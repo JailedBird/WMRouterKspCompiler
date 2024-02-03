@@ -87,7 +87,7 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
                 }
                 val handler = Helper.buildHandler(isActivity, element)
 
-                val interceptors = Helper.buildInterceptors(regex)
+                val interceptors = Helper.buildInterceptors { regex.interceptors.asList() }
 
                 logger.info(">>> Found routes, ${element.qualifiedName?.asString()}")
 

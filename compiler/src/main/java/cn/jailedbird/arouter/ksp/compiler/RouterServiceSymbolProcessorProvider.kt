@@ -84,15 +84,8 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 } catch (e: KSTypesNotPresentException) {
                     e.ksTypes
                 }
-                val typeMirrors = mutableSetOf<KSClassDeclaration>()
-                for (i in interfacesAny) {
-                    if (i is KSType) {
-                        val declaration = i.declaration
-                        if (declaration is KSClassDeclaration) {
-                            typeMirrors.add(declaration)
-                        }
-                    }
-                }
+                val typeMirrors =
+                    Helper.parseAnnotationClassParameter { service.interfaces.asList() }
 
                 val keys = service.key
                 val implementationName: String = element.qualifiedName?.asString()!!
@@ -100,11 +93,9 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 val defaultImpl = service.defaultImpl
                 val elementName = element.qualifiedName!!.asString()
                 logger.info("fuckyou $elementName")
-                if (elementName.contains("TestPathService1")) {
 
-                }
                 for (mirror in typeMirrors) {
-                    val interfaceName: String = mirror.qualifiedName!!.asString()
+                    val interfaceName: String = mirror
                     logger.info("\tfuck $elementName -- > $interfaceName")
                     if (element.isAbstract() || !element.isSubclassOf(interfaceName)) {
                         val msg =

@@ -85,7 +85,7 @@ class RouterUriSymbolProcessorProvider : SymbolProcessorProvider {
                 }
                 val handler = Helper.buildHandler(isActivity, element)
 
-                val interceptors = Helper.buildInterceptors(uri)
+                val interceptors = Helper.buildInterceptors { uri.interceptors.asList() }
 
                 /*
                 * String[] pathList = page.path();
