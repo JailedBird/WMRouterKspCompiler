@@ -101,9 +101,9 @@ class RouterServiceSymbolProcessorProvider : SymbolProcessorProvider {
                 for (mirror in typeMirrors) {
                     val interfaceName: String = mirror.qualifiedName!!.asString()
 
-                    if (element.isAbstract() || element.isSubclassOf(mirror.qualifiedName!!.asString())) {
+                    if (element.isAbstract() || !element.isSubclassOf(mirror.qualifiedName!!.asString())) {
                         val msg =
-                            elementName + "没有实现注解" + "@RouterService" + "标注的接口" + interfaceName
+                            "The $elementName does not implement the interface $interfaceName annotated with the @RouterService annotation."
                         throw RuntimeException(msg)
                     }
 
