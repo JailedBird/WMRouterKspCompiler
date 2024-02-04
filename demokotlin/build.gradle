@@ -2,11 +2,11 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 //apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
-//apply plugin: 'com.google.devtools.ksp'
+apply plugin: 'com.google.devtools.ksp'
 
-//ksp {
-//    arg("hash", "demokotlin")
-//}
+ksp {
+    arg("WM_ROUTER_ID", project.getName())
+}
 
 android {
     compileSdk 33
@@ -36,12 +36,15 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
     implementation "androidx.activity:activity-ktx:1.2.3"
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1'
     def lifecycle_version = "2.3.1"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     api project(path: ':demolib2')
     implementation project(":adapter-kotlin-coroutines")
 //    ksp project(path: ':compiler')
     implementation 'io.github.meituan-dianping:router:1.2.1'
-    kapt "io.github.meituan-dianping:compiler:1.2.1"
+    // kapt "io.github.meituan-dianping:compiler:1.2.1"
+    // 本地依赖 开发阶段可以将compiler模块拷贝到具体项目 实时修复bug
+    ksp project(":compiler")
+    // ksp "com.github.JailedBird:WMRouterKspCompiler:1.8.20-0.0.1"
 }

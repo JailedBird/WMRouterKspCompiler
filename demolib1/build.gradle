@@ -1,4 +1,10 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'com.google.devtools.ksp'
+
+ksp {
+    arg("WM_ROUTER_ID", project.getName())
+}
 
 android {
     namespace 'com.sankuai.waimai.router.demo.lib1'
@@ -29,5 +35,6 @@ dependencies {
 
     api project(path: ':demolib2')
     implementation "io.github.meituan-dianping:router:1.2.1"
-    annotationProcessor "io.github.meituan-dianping:compiler:1.2.1"
+    // annotationProcessor "io.github.meituan-dianping:compiler:1.2.1"
+    ksp project(":compiler")
 }

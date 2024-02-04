@@ -1,4 +1,10 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'com.google.devtools.ksp'
+
+ksp {
+    arg("WM_ROUTER_ID", project.getName())
+}
 
 android {
     compileSdk 33
@@ -26,5 +32,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     implementation 'io.github.meituan-dianping:router:1.2.1'
-    annotationProcessor "io.github.meituan-dianping:compiler:1.2.1"
+//    annotationProcessor "io.github.meituan-dianping:compiler:1.2.1"
+    ksp project(":compiler")
 }

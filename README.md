@@ -40,7 +40,7 @@ plugins {
 
 2、 需要使用此插件的模块，模块build.gradle需要做出如下配置
 
-- 模块启用ksp插件
+- 模块启用ksp插件，**纯Java模块记得添加kotlin-android插件，否则无法生成代码**
 
   ```
   plugins {
