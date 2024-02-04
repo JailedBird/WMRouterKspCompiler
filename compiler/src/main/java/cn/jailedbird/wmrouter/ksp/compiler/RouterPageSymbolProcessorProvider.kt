@@ -60,20 +60,18 @@ class RouterPageSymbolProcessorProvider : SymbolProcessorProvider {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
+            val parentTypeList = listOf(
+                Const.ACTIVITY_CLASS,
+                Const.URI_HANDLER_CLASS,
+                Const.FRAGMENT_CLASS,
+                Const.FRAGMENT_V4_CLASS,
+                FRAGMENT_ANDROID_X_CLASS
+            )
             for (element in elements) {
                 if (element.isAbstract()) {
                     continue
                 }
-                val type: Int =
-                    element.isSubclassOf(
-                        listOf(
-                            Const.ACTIVITY_CLASS,
-                            Const.URI_HANDLER_CLASS,
-                            Const.FRAGMENT_CLASS,
-                            Const.FRAGMENT_V4_CLASS,
-                            FRAGMENT_ANDROID_X_CLASS
-                        )
-                    )
+                val type: Int = element.isSubclassOf(parentTypeList)
                 val isActivity: Boolean = type == 0
                 val isHandler: Boolean = type == 1
                 val isFragment: Boolean = type == 2

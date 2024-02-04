@@ -38,7 +38,7 @@ internal object WMRouterHelper {
             name.replace("[^0-9a-zA-Z_]+".toRegex(), "")
         } else {
             logger.error(NO_MODULE_NAME_TIPS_KSP)
-            throw RuntimeException("WMRouter::Compiler >>> No module name, for more information, look at gradle log.")
+            throw RuntimeException(NO_MODULE_NAME_TIPS_KSP)
         }
     }
 

@@ -60,17 +60,16 @@ class RouterRegexSymbolProcessorProvider : SymbolProcessorProvider {
             logger.info(">>> Found routes, size is " + elements.size + " <<<")
             val codeBlock = CodeBlock.builder()
             val dependencies = mutableSetOf<KSFile>()
+            val parentTypeList = listOf(
+                Const.ACTIVITY_CLASS,
+                Const.URI_HANDLER_CLASS,
+            )
             for (element in elements) {
                 if (element.isAbstract()) {
                     continue
                 }
                 val type: Int =
-                    element.isSubclassOf(
-                        listOf(
-                            Const.ACTIVITY_CLASS,
-                            Const.URI_HANDLER_CLASS,
-                        )
-                    )
+                    element.isSubclassOf(parentTypeList)
                 val isActivity: Boolean = type == 0
                 val isHandler: Boolean = type == 1
 
