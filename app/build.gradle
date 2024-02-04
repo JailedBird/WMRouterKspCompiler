@@ -4,7 +4,7 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 apply plugin: 'WMRouter'
-apply plugin: "kotlin-kapt"
+//apply plugin: "kotlin-kapt"
 // or--> apply plugin: 'kotlin-android'
 // or--> apply plugin: 'com.google.devtools.ksp'
 ksp {
